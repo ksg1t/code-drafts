@@ -1,0 +1,674 @@
+//MISSING SSML CODE 
+
+
+'use strict';
+const Alexa = require('alexa-sdk');
+const APP_ID = undefined;
+
+/***********
+Data: Customize the data below as you please.
+***********/
+
+const SKILL_NAME = "Five Minute Meals";
+const STOP_MESSAGE = ".";
+const CANCEL_MESSAGE = "Okay. Do you want to hear a different recipe instead?";
+
+const HELP_START = "I know tasty recipes for breakfast, lunch, dinner, or snack that you can prepare in about 5 minutes. Which would you like to try?";
+const HELP_START_REPROMPT = "Just tell me what type of recipe you'd like. Do you want a recipe for breakfast, lunch, dinner, or snack?";
+const HELP_RECIPE = "Please select a meal – breakfast, lunch, dinner, or snack.";
+const HELP_RECIPE_REPROMPT = "Just ask me for a recipe.";
+const HELP_INSTRUCTIONS = "You can say 'repeat' to hear a step again, or 'next' to move on.";
+const HELP_INSTRUCTIONS_REPROMPT = "You can move on to the next step or hear the current one again. When you're ready, say 'next' or 'repeat.'";
+const HELP_CANCEL = "You can say 'give me a recipe' or say a meal – breakfast, lunch, dinner, or snack.";
+const HELP_CANCEL_REPROMPT = "What would you like a recipe for – breakfast, lunch, dinner, or snack?";
+
+const CHOOSE_TYPE_MESSAGE = "Welcome to 5 Minute Meals. I have recipes for breakfast, lunch, dinner, or snack. What meal would you like to prepare?";
+const REPROMPT_TYPE = "What type of meal would you like? Breakfast, lunch, dinner, or snack?";
+const MEALTYPE_NOT_IN_LIST = chosenType => `Sorry, I couldn't find any recipes for ${chosenType}. What can I help you find – Breakfast, lunch, dinner, or snack?`;
+
+const RECIPE_ADJECTIVES = [
+  "flavorful",
+  "appealing",
+  "delectable",
+  "fantastic",
+  "heavenly",
+  "mouth-watering",
+  "pleasant",
+  "special",
+  "tantalizing",
+  "tasteful",
+  "terrific",
+  "super simple",
+  "delightful",
+  "delicious",
+  "mouth-watering",
+  "delightful",
+  "yummy",
+  "delish",
+  "wonderful",
+  "tasty"
+];
+const SUGGEST_RECIPE = recipeName => `I found a ${_pickRandom(RECIPE_ADJECTIVES)} recipe you might like – ${recipeName}. Do you want to prepare ${recipeName}?`;
+const MISUNDERSTOOD_RECIPE_ANSWER = "Please answer with yes or no.";
+const NO_REMAINING_RECIPE = "Those are all my ideas for today. Would you like to hear ideas for a different meal type?"
+const INGREDIENTS_INTRO = "For this recipe, you'll need"; // Here follows a list of ingredients
+const INGREDIENTS_ENDING = "Ready to get started?"; // Will be said after the list of ingredients
+
+
+const FIRST_TIME_INSTRUCTIONS = "After you’ve heard a step, you can say 'repeat' to hear it again, or 'next' to move on.";
+const REPROMPT_INSTRUCTIONS = "Say 'next' to go to the next step, or 'repeat' to hear a step again.";
+const MISUNDERSTOOD_INSTRUCTIONS_ANSWER = "Sorry, I didn't understand you.";
+const CLOSING_MESSAGE = "Enjoy your meal!";
+
+const recipes = {
+  breakfast: [
+
+{
+  name: "Yogurt and Granola Parfait",
+  instructions: [
+    "First, place <say-as interpret-as="fraction">1/4</say-as> cup granola in the bottom of a parfait glass or dish.",
+    "Spoon <say-as interpret-as="fraction">1/2</say-as> cup of yogurt on top.",
+    "Drizzle with 1 tablespoon syrup.",
+    "And... you're done! You just made a delicious yogurt and granola parfait."
+  ],
+  ingredients: [
+    "granola",
+    "plain yogurt",
+    "maple syrup"
+  ]
+},
+
+{
+  name: "Hearty Oatmeal",
+  instructions: [
+    "First, mix <say-as interpret-as="fraction">1/2</say-as> a cup quick-cooking oatmeal with 1 cup water in a microwave-safe bowl.",
+    "Microwave for 1 and a <say-as interpret-as="fraction">1/2</say-as> minutes on high.",
+    "Top with 1 teaspoon brown sugar, 1 tablespoon walnuts, and 2 tablespoons raisins.",
+    "Stir in <say-as interpret-as="fraction">1/2</say-as> cup skim milk.",
+    "There you go! You just made a hearty and delicious hot breakfast."
+  ],
+  ingredients: [
+    "quick-cooking oatmeal",
+    "water",
+    "brown sugar",
+    "walnuts",
+    "raisins",
+    "skim milk"
+  ]
+},
+
+{
+  name: "Toast with Honey",
+  instructions: [
+    "First, toast the bread.",
+    "Top with nut butter, dried cherries, and honey.",
+    "Mmmmm. This will be a gooood breakfast."
+  ],
+  ingredients: [
+    "multigrain bread",
+    "nut butter",
+    "dried cherries",
+    "honey"
+  ]
+},
+
+{
+  name: "Toast with Ricotta and Grapes",
+  instructions: [
+    "First, toast 4 slices of country bread.",
+    "Spread each slice of bread with the ricotta.",
+    "Top with the grapes, and drizzle with the honey.",
+    "That's what I call a sweet, awesome breakfast!"
+  ],
+  ingredients: [
+    "country bread",
+    "<say-as interpret-as="fraction">1/4</say-as> cup ricotta",
+    "1 cup seedless green grapes",
+    "1 tablespoon honey"
+  ]
+},
+
+{
+  name: "Egg Tacos",
+  instructions: [
+    "First, top each tortilla with 2 tablespoons salsa and 1 tablespoon part-skim mozzarella.",
+    "Microwave on medium until cheese is melted, about 30 seconds.",
+    "Lightly mist a skillet with olive oil spray and heat over high.",
+    "Add 2 beaten eggs to the pan and scramble.",
+    "Once cooked as desired, divide between tacos.",
+    "Excellent! This is some gooood eating."
+  ],
+  ingredients: [
+    "2 corn tortillas",
+    "2 tablespoons salsa",
+    "1 tablespoon mozzarella",
+    "olive oil spray",
+    "2 eggs"
+  ]
+},
+
+{
+  name: "Cottage Cheese with Fruit and Nuts",
+  instructions: [
+    "First, scoop 1 cup of full-fat cottage cheese into a bowl.",
+    "Top with 1 handful sliced fruit or nuts, or a little of both.",
+    "Yum. This will be a gooood breakfast."
+  ],
+  ingredients: [
+    "1 cup full-fat cottage cheese",
+    "sliced fruit or nuts",
+  ]
+},
+
+{
+  name: "Blueberry Smoothie",
+  instructions: [
+    "First, in a blender container, combine 1 container blueberry greek yogurt with 1 cup of frozen blueberries.",
+    "Add <say-as interpret-as="fraction">1/4</say-as> cup oatmeal.",
+    "Add 1 teaspoon vanilla extract and 1/4 teaspoon cinnamon.",
+    "Add <say-as interpret-as="fraction">1/2</say-as> tablespoon honey.",
+    "Blend all ingredients on high until smooth.",
+    "There you go! You just made a delicious blueberry smoothie."
+  ],
+  ingredients: [
+    "1 container blueberry greek yogurt",
+    "1 cup frozen blueberries",
+    "1 teaspoon vanilla extract",
+    "<say-as interpret-as="fraction">1/4</say-as> cup oatmeal",
+    "<say-as interpret-as="fraction">1/4</say-as> teaspoon cinnamon",
+    "<say-as interpret-as="fraction">1/2</say-as> tablespoon honey"
+  ]
+}
+],
+
+
+
+
+lunch: [
+
+{
+  name: "Salami and Cream Cheese Sandwich",
+  instructions: [
+    "First, form a sandwich with 2 slices whole-grain bread, and 2 slices salami.",
+    "Spread on 2 tablespoons of cream cheese, and top with 2 leaves of lettuce.",
+    "Cut into shapes with a sandwich cutter or a large cookie cutter.",
+    "Have fun eating."
+  ],
+  ingredients: [
+    "2 slices whole-grain bread",
+    "2 tablespoons cream cheese",
+    "2 slices salami",
+    "2 leaves lettuce"
+  ]
+},
+
+{
+  name: "Roast Beef and Cheddar Roll-Upsh",
+  instructions: [
+    "In a small bowl, combine 4 ounces of cream cheese with 2 tablespoons of prepared horseradish.",
+    "Lay 4 large flour tortillas.",
+    "Spread the mixture evenly over each tortilla.",
+    "Layer each tortilla with Romaine lettuce, 2 slices of thinly sliced roast beef, and 1 slice of cheddar.",
+    "Roll up each tortilla and cut diagonally.",
+    "Have fun eating."
+  ],
+  ingredients: [
+    "4 ounces cream cheese, softened",
+    "2 tablespoons prepared horseradish",
+    "4 large flour tortillas",
+    "1 bunch of Romaine lettuce",
+    "8 ounces thinly sliced deli roast beef",
+    "4 slices Cheddar, thinly sliced"
+  ]
+},
+
+{
+  name: "Green Smoothie",
+  instructions: [
+    "First, in a blender container, combine <say-as interpret-as="fraction">1/2</say-as> cup fresh spinach and 1 banana.",
+    "Add <say-as interpret-as="fraction">1/2</say-as> cup unsweetened rice or almond milk, and 2 tablespoons flaxseeds.",
+    "Blend on high until smooth",
+    "Have fun eating."
+  ],
+  ingredients: [
+    "<say-as interpret-as="fraction">1/2</say-as> cup fresh spinach",
+    "1 banana",
+    "<say-as interpret-as="fraction">1/2</say-as> cup almond milk",
+    "2 tablespoons flaxseeds"
+  ]
+},
+
+{
+  name: "Tuna and Avocado Pita",
+  instructions: [
+    "First, halve and lightly toast a whole-wheat pita.",
+    "Mix together 1 pouch, or about 2 ounces, of tuna with 2 tablespoons spicy mustard",
+    "Add <say-as interpret-as="fraction">1/4</say-as> cup each shredded carrots and chopped celery",
+    "Add a dash each of turmeric, cumin, and black pepper",
+    "Stir to combine.",
+    "Split the tuna mixture between pita halves, and top with sliced avocado.",
+    "Have fun eating."
+  ],
+  ingredients: [
+    "Whole-wheat pita",
+    "2 oz tuna",
+    "sliced avocado",
+    "2 tablespoons spicy mustard",
+    "<say-as interpret-as="fraction">1/4</say-as> cup shredded carrots",
+    "<say-as interpret-as="fraction">1/4</say-as> cup chopped celery",
+    "turmeric",
+    "cumin",
+    "black pepper"
+  ]
+},
+
+{
+  name: "Hummus Wrap",
+  instructions: [
+    "Spread the whole-wheat tortilla with 2 tablespoons hummus.",
+    "Top with <say-as interpret-as="fraction">1/2</say-as> cup sliced cucumber and 1/4 cup crumbled Feta.",
+    "Cut diagonally and serve.",
+    "Lunch is ready!"
+  ],
+  ingredients: [
+    "1 whole-wheat tortilla",
+    "2 tablespoons hummus",
+    "<say-as interpret-as="fraction">1/2</say-as> cup sliced cucumber",
+    "<say-as interpret-as="fraction">1/4</say-as> cup feta"
+  ]
+}
+
+
+
+
+
+],
+
+
+
+
+
+
+dinner: [
+
+
+{
+  name: "Paleo Green Salad",
+  instructions: [
+    "First, combine <say-as interpret-as="fraction">1/2</say-as> cup of chopped chicken breast with 3 cups lettuce.",
+    "Add <say-as interpret-as="fraction">1/4</say-as> cup shredded carrots, and 1/2 sliced avocado.",
+    "Drizzle with dressing.",
+    "Enjoy your healthy dinner."
+  ],
+  ingredients: [
+    "<say-as interpret-as="fraction">1/2</say-as> cup of chopped chicken breast",
+    "3 cups lettuce",
+    "<say-as interpret-as="fraction">1/4</say-as> cup shredded carrots",
+    "<say-as interpret-as="fraction">1/2</say-as> sliced avocado",
+    "Dressing"
+  ]
+},
+
+{
+  name: "Veggie Omelet",
+  instructions: [
+    "First, heat an oiled frying pan over high heat",
+    "Lightly beat 2 eggs",
+    "Add the eggs to the pan, along with <say-as interpret-as="fraction">1/2</say-as> cup of veggies.",
+    "Cover, turn heat down to medium low, and let cook over for about 2 to 3 minutes, until eggs are firm.",
+    "Enjoy your protein-packed dinner."
+  ],
+  ingredients: [
+    "2 eggs",
+    "<say-as interpret-as="fraction">1/2</say-as> cup chopped vegetables",
+    "Cooking oil"
+  ]
+},
+
+{
+  name: "Tahini Wrap",
+  instructions: [
+    "First, fill 1 whole-wheat tortilla with 1 cup leftover grilled or raw veggies.",
+    "Add 2 tablespoons each of feta and tahini.",
+    "Wrap up and cut diagonally.",
+    "Your fresh and healthy dinner is ready!"
+  ],
+  ingredients: [
+    "1 whole-wheat tortilla",
+    "1 cup leftover grilled or raw veggies",
+    "2 tablespoons feta",
+    "1 tablespoons tahini"
+  ]
+},
+
+{
+  name: "Chicken Quesadillas",
+  instructions: [
+    "First, microwave 2 flour tortillas on a microwave-safe plate, until slightly crispy.",
+    "Mix <say-as interpret-as="fraction">1/2</say-as> cup cooked chicken with <say-as interpret-as="fraction">1/2</say-as> cup diced bell pepper in a bowl.",
+    "Add 1 tablespoon taco seasoning, and mix until evenly combined.",
+    "Microwave for 1-2 minutes, until the peppers are soft.",
+    "Spread the mixture evenly on one tortilla.",
+    "Cover with <say-as interpret-as="fraction">1/4</say-as> cup cheddar cheese, and top with the other tortilla.",
+    "Cook for another 30 seconds to 1 minute, slice, then serve.",
+    "Enjoy!"
+  ],
+  ingredients: [
+    "2 medium flour tortillas",
+    "<say-as interpret-as="fraction">1/2</say-as> cup cooked chicken strips",
+    "<say-as interpret-as="fraction">1/2</say-as> bell pepper, diced",
+    "1 tablespoon taco seasoning",
+    "<say-as interpret-as="fraction">1/4</say-as> cup shredded cheddar cheese"
+  ]
+},
+
+{
+  name: "Mac and Cheese",
+  instructions: [
+    "Place <say-as interpret-as="fraction">1/2</say-as> pound cooked pasta shells and 2 cups shredded cheddar cheese into a microwave-safe bowl.",
+    "Add 1 cup whole milk, 3/4 teaspoon salt, and 1/2 teaspoon pepper.",
+    "Cover lightly with plastic wrap and microwave on high for 3 minutes.",
+    "Stir, and microwave again for an additional 2 minutes.",
+    "Perfect. Ready to eat!"
+  ],
+  ingredients: [
+    "<say-as interpret-as="fraction">1/2</say-as> pound cooked pasta shells",
+    "2 cups shredded cheddar cheese",
+    "1 cup whole milk",
+    "<say-as interpret-as="fraction">3/4</say-as> teaspoon kosher salt",
+    "<say-as interpret-as="fraction">1/2</say-as> teaspoon black pepper"
+  ]
+}
+
+
+],
+
+
+
+
+snack: [
+
+{
+  name: "Turkey Crackers",
+  instructions: [
+    "Top multigrain crackers with slices of turkey.",
+    "Add a dollop of ranch dressing to each cracker.",
+    "Enjoy a savory snack!"
+  ],
+  ingredients: [
+    "multigrain crackers",
+    "turkey slices",
+    "ranch dressing"
+  ]
+},
+
+{
+  name: "Hummus Bagel with Tomato",
+  instructions: [
+    "First, thinly slice <say-as interpret-as="fraction">1/2</say-as> a tomato.",
+    "Top each half of a multigrain bagel with hummus and tomato slices.",
+    "Have fun eating."
+  ],
+  ingredients: [
+    "1 Multigrain bagel",
+    "2 tablespoons Hummus",
+    "<say-as interpret-as="fraction">1/2</say-as> Tomato"
+  ]
+},
+
+{
+  name: "Pears with Nut Butter",
+  instructions: [
+    "First, slice the pear into wedges.",
+    "Top the pear wedges with nut butter,",
+    "Sprinkle with granola.",
+    "Enjoy!"
+  ],
+  ingredients: [
+    "1 pear",
+    "nut butter",
+    "granola"
+  ]
+},
+
+{
+  name: "Cheese Crackers",
+  instructions: [
+    "Top each multigrain cracker with sliced cheese and a dill pickle.",
+    "Have fun eating."
+  ],
+  ingredients: [
+    "Multigrain crackers",
+    "Cheese slices",
+    "Dill pickles"
+  ]
+},
+
+
+{
+  name: "Wrapped Apples",
+  instructions: [
+    "Cut the apple into wedges.",
+    "Wrap each apple wedge with a slice of cheese and ham.",
+    "Enjoy!"
+  ],
+  ingredients: [
+    "1 apple",
+    "Cheese slices",
+    "Ham slices"
+  ]
+}
+]
+};
+
+/***********
+Execution Code: Avoid editing the code below if you don't know JavaScript.
+***********/
+
+// Private methods (this is the actual code logic behind the app)
+
+const _getCurrentStep = handler => handler.attributes['instructions'][handler.attributes['current_step']];
+
+const _intentAndSlotPresent = handler => {
+  try {
+    return handler.event.request.intent.slots.mealType;
+  }
+  catch (e){
+    return false;
+  }
+};
+const _selectedMealType = handler => {
+  return _intentAndSlotPresent(handler) && handler.event.request.intent.slots.mealType.value;
+};
+const _checkMealTypePresence = handler => {
+  return Object.keys(recipes).includes(_selectedMealType(handler));
+};
+const _setMealType = handler => {
+  // Reset remaining recipes in case the user went back from before
+  handler.attributes['mealType'] = _selectedMealType(handler);
+  handler.attributes['remainingRecipes'] = recipes[handler.attributes['mealType']];
+  handler.handler.state = states.RECIPEMODE;
+  handler.emitWithState("Recipe");
+  return true;
+};
+
+const _randomIndexOfArray = (array) => Math.floor(Math.random() * array.length);
+const _pickRandom = (array) => array[_randomIndexOfArray(array)];
+
+// Handle user input and intents:
+
+const states = {
+  STARTMODE: "_STARTMODE",
+  RECIPEMODE: "_RECIPEMODE",
+  INSTRUCTIONSMODE: "_INSTRUCTIONSMODE",
+  CANCELMODE: "_CANCELMODE"
+};
+
+
+const newSessionhandlers = {
+  'NewSession': function(){
+    this.handler.state = states.STARTMODE;
+    this.emitWithState('NewSession');
+  },
+  'AMAZON.HelpIntent': function(){
+    this.emit(':ask', HELP_START, HELP_START_REPROMPT);
+  },
+  'AMAZON.CancelIntent': function(){
+    this.emit(':tell', CANCEL_MESSAGE);
+  },
+  'AMAZON.StopIntent': function(){
+    this.emit(':tell', STOP_MESSAGE);
+  },
+  'Unhandled': function(){
+    this.emit(':ask', REPROMPT_TYPE);
+  }
+};
+
+const startModeHandlers = Alexa.CreateStateHandler(states.STARTMODE, {
+  'NewSession': function(startMessage = CHOOSE_TYPE_MESSAGE){
+    if(_checkMealTypePresence(this)){
+      // Go directly to selecting a meal if mealtype was already present in the slots
+      _setMealType(this);
+    }else{
+      this.emit(':ask', startMessage, REPROMPT_TYPE);
+    }
+  },
+  'ChooseTypeIntent': function(){
+    if(_checkMealTypePresence(this)){
+      _setMealType(this);
+    }else{
+      this.emit(':ask', MEALTYPE_NOT_IN_LIST(_selectedMealType(this)));
+    }
+  },
+  'AMAZON.HelpIntent': function(){
+    this.emit(':ask', HELP_START, HELP_START_REPROMPT);
+  },
+  'AMAZON.CancelIntent': function(){
+    this.emit(':tell', CANCEL_MESSAGE);
+  },
+  'AMAZON.StopIntent': function(){
+    this.emit(':tell', STOP_MESSAGE);
+  },
+  'Unhandled': function(){
+    this.emit(':ask', REPROMPT_TYPE);
+  }
+});
+
+const recipeModeHandlers = Alexa.CreateStateHandler(states.RECIPEMODE, {
+  'Recipe': function(){
+    if(this.new){
+      this.attributes['remainingRecipes'] = recipes[handler.attributes['mealType']];
+    }
+
+    if(this.attributes['remainingRecipes'].length > 0){
+      // Select random recipe and remove it form remainingRecipes
+      this.attributes['recipe'] = this.attributes['remainingRecipes'].splice(_randomIndexOfArray(this.attributes['remainingRecipes']), 1)[0]; // Select a random recipe
+      // Ask user to confirm selection
+      this.emit(':ask', SUGGEST_RECIPE(this.attributes['recipe'].name));
+    }else{
+      this.attributes['remainingRecipes'] = recipes[this.attributes['mealType']];
+      this.handler.state = states.CANCELMODE;
+      this.emitWithState('NoRecipeLeftHandler');
+    }
+  },
+  'IngredientsIntent': function(){
+    var ingredients = this.attributes['recipe'].ingredients.join(', ').replace(/,(?!.*,)/gmi, ' and'); // Add 'and' before last ingredient
+
+    this.emit(':ask', `${INGREDIENTS_INTRO} ${ingredients}. ${INGREDIENTS_ENDING}`)
+  },
+  'YesIntent': function(){
+    this.attributes['instructions'] = this.attributes['recipe'].instructions;
+    this.attributes['current_step'] = 0;
+    this.handler.state = states.INSTRUCTIONSMODE;
+    this.emitWithState('InstructionsIntent');
+  },
+  'NoIntent': function(){
+    this.emitWithState('Recipe');
+  },
+  'AMAZON.HelpIntent': function(){
+    this.emit(':ask', HELP_RECIPE, HELP_RECIPE_REPROMPT);
+  },
+  'AMAZON.CancelIntent': function(){
+    this.handler.state = states.CANCELMODE;
+    this.emitWithState('AskToCancelHandler');
+  },
+  'AMAZON.StopIntent': function(){
+    this.emit(':tell', STOP_MESSAGE);
+  },
+  'Unhandled': function(){
+    this.emit(':ask', MISUNDERSTOOD_RECIPE_ANSWER);
+  }
+});
+
+const instructionsModeHandlers = Alexa.CreateStateHandler(states.INSTRUCTIONSMODE, {
+  'InstructionsIntent': function(){
+    const firstTimeInstructions = (this.attributes['current_step'] == 0) ? FIRST_TIME_INSTRUCTIONS : '';
+    this.emit(':ask', `${_getCurrentStep(this)} ${firstTimeInstructions}`, REPROMPT_INSTRUCTIONS);
+  },
+  'NextStepIntent': function(){
+    this.attributes['current_step']++;
+
+    if(this.attributes['current_step'] < this.attributes['instructions'].length - 1){
+      this.emitWithState('InstructionsIntent');
+    }else{
+      this.emitWithState('InstructionsEnded');
+    }
+  },
+  'InstructionsEnded': function(){
+    this.emit(':tell', `${_getCurrentStep(this)} ${CLOSING_MESSAGE}`);
+  },
+  'DifferentRecipeIntent': function(){
+    this.handler.state = states.RECIPEMODE;
+    this.emitWithState('Recipe');
+  },
+  'AMAZON.HelpIntent': function(){
+    this.emit(':ask', HELP_INSTRUCTIONS, HELP_INSTRUCTIONS_REPROMPT);
+  },
+  'AMAZON.CancelIntent': function(){
+    this.handler.state = states.CANCELMODE;
+    this.emitWithState('AskToCancelHandler');
+  },
+  'AMAZON.StopIntent': function(){
+    this.emit(':tell', STOP_MESSAGE);
+  },
+  'Unhandled': function(){
+    this.emit(':ask', MISUNDERSTOOD_INSTRUCTIONS_ANSWER);
+  }
+});
+
+
+const cancelModeHandlers = Alexa.CreateStateHandler(states.CANCELMODE, {
+  'NoRecipeLeftHandler': function(){
+    this.emit(':ask', NO_REMAINING_RECIPE);
+  },
+  'AskToCancelHandler': function(){
+    this.emit(':ask', CANCEL_MESSAGE);
+  },
+  'YesIntent': function(){
+    this.attributes['current_step'] = 0;
+    this.handler.state = states.STARTMODE;
+    this.emitWithState('NewSession', REPROMPT_TYPE);
+  },
+  'NoIntent': function(){
+    this.emit(':tell', STOP_MESSAGE);
+  },
+  'AMAZON.HelpIntent': function(){
+    this.emit(':ask', HELP_CANCEL, HELP_CANCEL_REPROMPT);
+  },
+  'AMAZON.CancelIntent': function(){
+    this.emit(':tell', STOP_MESSAGE);
+  },
+  'AMAZON.StopIntent': function(){
+    this.emit(':tell', STOP_MESSAGE);
+  },
+  'Unhandled': function(){
+    this.emit(':ask', MISUNDERSTOOD_RECIPE_ANSWER);
+  }
+});
+
+exports.handler = (event, context, callback) => {
+  const alexa = Alexa.handler(event, context);
+  alexa.APP_ID = APP_ID;
+  alexa.registerHandlers(newSessionhandlers, startModeHandlers, recipeModeHandlers, instructionsModeHandlers, cancelModeHandlers);
+  alexa.execute();
+};
